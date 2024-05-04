@@ -2,7 +2,8 @@ import os
 from tkinter import *
 from tkinter import messagebox
 from tkinter import ttk
-
+import tkinter as tk
+from game_window import GameWindow  # Импортируем класс GameWindow из файла game_window.py
 
 def dismiss(win):
     win.grab_release()
@@ -51,6 +52,7 @@ class game:
         self.blur.place(x=744, y=275, width=42, height=42)
         self.button_avt.place(x=260, y=390)
         self.button_reg.place(x=530, y=390)
+        self.game_window = None
 
     def bluring(self, pas, but):
         if self.count % 2 == 0:
@@ -90,17 +92,26 @@ class game:
                     f_p = False
 
             if f_reg:
-                for widget in self.main.winfo_children():
-                    widget.destroy()
+                self.main.withdraw()  # Скрыть окно авторизации
+                self.open_game_window()
 
-                Label(self.main, text=f'Вы успешно авторизовались!', font='Arial 36 bold').place(x=175, y=160)
-                button = ttk.Button(self.main, text='Играть', style='my.TButton', command=self.play)
-                button.place(x=440, y=340)
 
             elif not f_p:
                 messagebox.showwarning(title='Ошибка', message='Неверный пароль')
             else:
                 messagebox.showwarning(title='Ошибка', message='Такого аккаунта не существует')
+
+    def open_game_window(self):
+        if self.game_window is None:
+            self.game_window = GameWindow(self.main)
+            self.game_window.root.protocol("WM_DELETE_WINDOW",
+                                           self.on_game_window_close)  # Обработчик закрытия окна игры
+        else:
+            self.game_window.show()
+
+    def on_game_window_close(self):
+        self.main.deiconify()  # Восстановить видимость окна авторизации
+        self.game_window.hide()  # Скрыть окно игры
 
     def regist(self):
         win = Toplevel()
@@ -112,9 +123,9 @@ class game:
 
         login = ttk.Entry(win, width=20, justify='center', font='Arial 20 bold')
         password = ttk.Entry(win, width=20, justify='center', font='Arial 20 bold', show='*')
-        txtl = Label(win, text='Логин', font='Arial 26 bold')
-        txtp = Label(win, text='Пароль', font='Arial 26 bold')
-        txt = Label(win, text='Придумайте логин и пароль для регистрации', font='Arial 30 bold')
+        txtl = Label(win, text='Логин', font='Arial 30 bold')
+        txtp = Label(win, text='Пароль', font='Arial 30 bold')
+        txt = Label(win, text='Введите желаемые логин и пароль', font='Arial 36 bold')
         blur = ttk.Button(win, text='😌', style='my1.TButton', command=lambda: self.bluring(password, blur))
         button_reg = ttk.Button(win, text='Зарегистрироваться', style='my.TButton', command=lambda: registrate())
 
@@ -163,6 +174,32 @@ class game:
                     win.after(2000, lambda: (win.destroy(), win.grab_release()))
                 else:
                     messagebox.showwarning(title='Ошибка', message='Такой аккаунт уже существует')
+
+    def play(self):
+        BRD_ROWS = BRD_COLS = 8
+        CELL_SZ = 100
+
+        canvas = Canvas(self.main, width=CELL_SZ * BRD_ROWS, height=CELL_SZ * BRD_COLS)
+
+        cell_colors = ['white', 'black']
+        ci = 0  # color index
+
+        for row in range(BRD_ROWS):
+            for col in range(BRD_COLS):
+                x1, y1 = col * CELL_SZ, row * CELL_SZ
+                x2, y2 = col * CELL_SZ + CELL_SZ, row * CELL_SZ + CELL_SZ
+                canvas.create_rectangle((x1, y1), (x2, y2), fill=cell_colors[ci])
+
+                ci = not ci
+
+            ci = not ci
+        self.main.geometry('800x800+560+100')
+        canvas.pack()
+
+    def open_game_window(self):
+        game_window = tk.Toplevel()
+        app = GameWindow(game_window)
+        game_window.wait_window()  # Показать окно с игрой и дождаться его закрытия
 
 root = Tk()
 root.title('Авторизация')
